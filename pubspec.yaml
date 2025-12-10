@@ -1,0 +1,36 @@
+# pubspec.yaml (KODE YANG SUDAH DIPERBAIKI)
+name: tubes_dppb
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.9.2 <4.0.0"
+
+# ------------------------------------------------------------------
+# BAGIAN DEPENDENCIES: Perhatikan Indentasi!
+# ------------------------------------------------------------------
+dependencies:
+  # Ini adalah dependensi inti Flutter
+  flutter:
+    sdk: flutter
+
+  # Dependensi lainnya harus rata dengan 'flutter:'
+  provider: ^6.1.1 # <--- Indentasi Benar
+  http: ^1.2.1 # <--- Indentasi Benar
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+# ------------------------------------------------------------------
+# BAGIAN FLUTTER
+# ------------------------------------------------------------------
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
