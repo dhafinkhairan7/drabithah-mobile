@@ -1,68 +1,13 @@
-// File: lib/home_screen.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-
-// --- IMPORTS ---
 import 'wishlist_screen.dart';
 import 'models/product_model.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/cart_provider.dart';
 import 'cart_screen.dart';
 import 'all_products_screen.dart';
-
-// --- DATA LOKAL ---
-final List<Product> localAllProducts = [
-  Product(
-    id: '101',
-    name: 'Casablanca',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/casablanca.jpg',
-    description: '',
-  ),
-  Product(
-    id: '102',
-    name: 'Ghissah',
-    series: 'Arabian Series',
-    price: 48000.0,
-    imageUrl: 'assets/images/ghissah.jpg',
-    description: '',
-  ),
-  Product(
-    id: '103',
-    name: 'Riyadh',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/riyadh.jpg',
-    description: '',
-  ),
-  Product(
-    id: '104',
-    name: 'Aljubail',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/aljubail.jpg',
-    description: '',
-  ),
-  Product(
-    id: '105',
-    name: 'Layla',
-    series: 'Luxury Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/layla.jpg',
-    description: '',
-  ),
-  Product(
-    id: '106',
-    name: 'Turaif',
-    series: 'Luxury Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/turaif.jpg',
-    description: '',
-  ),
-];
+import 'product_detail_screen.dart';
+import 'services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -72,38 +17,32 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String mockApiUrl =
-      'https://api.mockfly.dev/mocks/39564858-aa86-4f4d-91b6-d5c4146a48d8/products';
   final TextEditingController _searchController = TextEditingController();
-
   List<Product> _featuredProducts = [];
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _loadFeaturedProducts();
   }
 
-  Future<void> _fetchData() async {
-    try {
-      final response = await http.get(Uri.parse(mockApiUrl));
-      List<Product> allData = [];
-      if (response.statusCode == 200) {
-        List<dynamic> jsonList = jsonDecode(response.body);
-        allData = jsonList.map((json) => Product.fromJson(json)).toList();
-      } else {
-        allData = localAllProducts;
-      }
+  Future<void> _loadFeaturedProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
+    try {
+      final allProducts = await ApiService.fetchProducts();
       setState(() {
-        // TUGAS: Mengambil hanya 3 produk untuk ditampilkan di Home
-        _featuredProducts = allData.take(3).toList();
+        _featuredProducts = allProducts.take(3).toList();
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _featuredProducts = localAllProducts.take(3).toList();
+        _error = 'Gagal memuat produk: $e';
         _isLoading = false;
       });
     }
@@ -122,14 +61,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addToCart(Product product) {
-    context.read<CartProvider>().addItem(product, quantity: 1);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} ditambahkan ke keranjang!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Tambah ke Keranjang'),
+          content: Text('Apakah Anda yakin ingin menambahkan ${product.name} ke keranjang?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<CartProvider>().addItem(product, quantity: 1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${product.name} ditambahkan ke keranjang!'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Text('Ya, Tambah'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -155,10 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildModernBanner(),
               const SizedBox(height: 30),
               _buildStatSection(),
-              const SizedBox(height: 30),
-              _buildSectionHeader('Kategori Pilihan', null),
-              const SizedBox(height: 10),
-              _buildCategoryGrid(),
               const SizedBox(height: 30),
               _buildSectionHeader('Produk Unggulan', () {
                 Navigator.push(
@@ -263,11 +219,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProductListView() {
     return SizedBox(
       height: 340,
-      child: ListView.builder(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _featuredProducts.length,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         physics: const BouncingScrollPhysics(),
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) =>
             _buildProductCard(context, _featuredProducts[index]),
       ),
@@ -289,12 +246,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AllProductsScreen(initialSearch: ''),
-          ),
-        ),
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Pilihan Aksi'),
+                content: Text('Apa yang ingin Anda lakukan untuk produk ${product.name}?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Batal'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailScreen(product: product),
+                        ),
+                      );
+                    },
+                    child: Text('Lihat Detail'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -304,7 +284,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 170,
                   width: 170,
                   padding: const EdgeInsets.all(15),
-                  child: Image.asset(product.imageUrl, fit: BoxFit.contain),
+                  child: Image.network(
+                    product.imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.orange[600],
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[100],
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported,
+                              color: Colors.grey, size: 24),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 Positioned(
                   top: 10,
@@ -454,52 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryGrid() {
-    final categories = [
-      {'name': 'EDP', 'icon': Icons.opacity},
-      {'name': 'EDT', 'icon': Icons.water_drop},
-      {'name': 'Cologne', 'icon': Icons.local_drink},
-      {'name': 'Mist', 'icon': Icons.bubble_chart},
-    ];
-    return SizedBox(
-      height: 90,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 20),
-        itemBuilder: (context, index) => Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Icon(
-                categories[index]['icon'] as IconData,
-                color: Colors.orange,
-                size: 26,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              categories[index]['name'] as String,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  
   Widget _buildModernBanner() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
