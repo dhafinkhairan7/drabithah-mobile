@@ -1,12 +1,13 @@
-// File: lib/models/product_model.dart (FINAL - Disinkronkan)
+// File: lib/models/product_model.dart 
 
 class Product {
   final String id;
   final String name;
-  final String series; // Menggunakan 'series' sesuai draft Anda
+  final String series;
   final double price;
-  final String imageUrl; // Menggunakan 'imageUrl' sesuai draft Anda
-  bool isFavorite; // Status favorit yang bisa diubah (mutable)
+  final String imageUrl;
+  final String? description;
+  bool isFavorite;
 
   Product({
     required this.id,
@@ -14,50 +15,35 @@ class Product {
     required this.series,
     required this.price,
     required this.imageUrl,
+    this.description,
     this.isFavorite = false,
   });
 
-  // Konstruktor untuk membuat Product dari data JSON (dari API)
   factory Product.fromJson(Map<String, dynamic> json) {
-    // Penanganan konversi tipe data dari API
-    String productId = json['id']?.toString() ?? 'unknown';
-    double productPrice = double.tryParse(json['price']?.toString() ?? '0') ?? 0.0;
+    // Generate ID from name if not provided
+    String productId = json['id']?.toString() ?? 
+        (json['name']?.toString().toLowerCase().replaceAll(' ', '_') ?? 'unknown');
+    
+    // Ensure price is converted to double properly
+    double productPrice = 0.0;
+    if (json['price'] != null) {
+      if (json['price'] is int) {
+        productPrice = (json['price'] as int).toDouble();
+      } else if (json['price'] is double) {
+        productPrice = json['price'] as double;
+      } else {
+        productPrice = double.tryParse(json['price'].toString()) ?? 0.0;
+      }
+    }
 
     return Product(
       id: productId,
       name: json['name'] ?? 'No Name',
-      series: json['series'] ?? json['brand'] ?? 'Uncategorized',
+      series: json['series'] ?? 'Uncategorized',
       price: productPrice,
-      imageUrl: json['imageUrl'] ?? 'assets/images/default.jpg',
-      isFavorite: false, // Status awal, akan disinkronkan di HomeScreen
+      imageUrl: json['imageUrl'] ?? 'https://via.placeholder.com/800x800',
+      description: json['description'] as String?,
+      isFavorite: false,
     );
   }
 }
-
-// Data Dummy Lokal yang Sudah Disinkronkan
-final List<Product> localFeaturedProducts = [
-  Product(
-    id: '101',
-    name: 'Casablanca',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/casablanca.jpg', // Pastikan path ini ada!
-    isFavorite: false,
-  ),
-  Product(
-    id: '102',
-    name: 'Ghissah',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/ghissah.jpg',
-    isFavorite: false,
-  ),
-  Product(
-    id: '103',
-    name: 'Riyadh',
-    series: 'Arabian Series',
-    price: 45000.0,
-    imageUrl: 'assets/images/riyadh.jpg',
-    isFavorite: false,
-  ),
-];
