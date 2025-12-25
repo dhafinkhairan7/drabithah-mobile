@@ -141,11 +141,26 @@ class WishlistItemCard extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
+                    child: Image.network(
                       product.imageUrl,
                       fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                : null,
+                            color: Colors.orange[600],
+                            strokeWidth: 2,
+                          ),
+                        );
+                      },
                       errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.image_not_supported, color: Colors.grey);
+                        return Container(
+                          color: Colors.grey[100],
+                          child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                        );
                       },
                     ),
                   ),
