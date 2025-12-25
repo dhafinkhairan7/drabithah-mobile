@@ -1,10 +1,10 @@
-// lib/screens/cart_screen.dart
+// lib/cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/cart_provider.dart';
-import '../models/cart_item_model.dart';
+import 'providers/cart_provider.dart';
+import 'models/cart_item_model.dart';
 
-import '../utils/format_utils.dart'; // nanti buat file util di bawah
+import 'utils/format_utils.dart'; // nanti buat file util di bawah
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -84,12 +84,27 @@ class _CartScreenState extends State<CartScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(
+                                child: Image.network(
                                   ci.product.imageUrl,
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                            : null,
+                                        color: Colors.orange[600],
+                                        strokeWidth: 2,
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: Colors.grey[100],
+                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
