@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'wishlist_screen.dart'; // Pastikan file ini ada di project kamu
+import 'providers/auth_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -46,50 +48,61 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  Stack(
+              child: Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  final user = authProvider.user;
+                  
+                  return Column(
                     children: [
-                      const CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.orange,
-                        backgroundImage: NetworkImage('https://i.pravatar.cc/300?img=5'),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkWell(
-                          onTap: () {
-                            _navigateTo(context, "Edit Profil");
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                              border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                            ),
-                            child: const Icon(Icons.edit, size: 12, color: Colors.white),
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Colors.orange,
+                            backgroundImage: user?.avatar != null 
+                                ? NetworkImage(user!.avatar!)
+                                : const NetworkImage('https://i.pravatar.cc/300?img=5'),
+                            child: user?.avatar == null 
+                                ? Icon(Icons.person, color: Colors.white, size: 40)
+                                : null,
                           ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: () {
+                                _navigateTo(context, "Edit Profil");
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
+                                ),
+                                child: const Icon(Icons.edit, size: 12, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        user?.username ?? 'Guest User',
+                        style: const TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.bold, 
+                          color: Colors.black87
                         ),
                       ),
+                      const SizedBox(height: 5),
+                      Text(
+                        user?.email ?? 'guest@example.com',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    'Drabithah Parfume',
-                    style: TextStyle(
-                      fontSize: 18, 
-                      fontWeight: FontWeight.bold, 
-                      color: Colors.black87
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'drabithah.parfume@example.com',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
 
@@ -210,12 +223,28 @@ class ProfileScreen extends StatelessWidget {
               child: const Text("Batal", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-                // Simulasi Logout
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Berhasil Keluar")),
-                );
+                try {
+                  await Provider.of<AuthProvider>(context, listen: false).logout();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Berhasil Keluar"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Gagal keluar: $e"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text("Keluar", style: TextStyle(color: Colors.white)),
