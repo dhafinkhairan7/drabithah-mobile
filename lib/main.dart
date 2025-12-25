@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // --- IMPORT SEMUA SCREEN ---
+import 'login_screen.dart';
 import 'home_screen.dart';
 import 'all_products_screen.dart'; // <--- PASTIKAN IMPORT INI ADA
 import 'wishlist_screen.dart';
@@ -11,11 +12,13 @@ import 'cart_screen.dart';
 // --- IMPORT PROVIDERS ---
 import 'providers/wishlist_provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (ctx) => AuthProvider()),
         ChangeNotifierProvider(create: (ctx) => CartProvider()),
         ChangeNotifierProvider(create: (ctx) => WishlistProvider()),
       ],
@@ -38,7 +41,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: primaryGold),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          return authProvider.isAuthenticated 
+              ? const MainScreen()
+              : const LoginScreen();
+        },
+      ),
     );
   }
 }
