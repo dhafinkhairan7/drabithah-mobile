@@ -1,0 +1,50 @@
+name: drabithah_parfume
+description: "Aplikasi E-Commerce Drabithah Parfume."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- Icon Bawaan ---
+  cupertino_icons: ^1.0.8
+
+  # --- PAKET TAMBAHAN ---
+  # 1. API Request
+  http: ^1.2.0
+  
+  # 2. State Management
+  provider: ^6.1.1 
+  
+  # 3. Google Fonts
+  google_fonts: ^6.1.0
+  
+  # 4. Format Mata Uang
+  intl: ^0.19.0
+  
+  # 5. Gambar Cache
+  cached_network_image: ^3.3.1
+  
+  # 6. Local Storage
+  shared_preferences: ^2.5.4
+
+ # 7. ganti pp
+  image_picker: ^1.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # --- ASET GAMBAR ---
+  # Pastikan folder 'assets/images/' sudah dibuat di sidebar kiri
+  assets:
+    - assets/images/
